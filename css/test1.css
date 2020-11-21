@@ -1,0 +1,44 @@
+html, body{
+    background: paleturquoise;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+}
+
+.shadowDiv{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 1000;
+    background: rgb(160, 158, 160);
+    opacity: 0.5;
+    top: 0px;
+    bottom: 0px;
+}
+
+input{
+    width: 20%;
+    height: 80px;
+    font-size: 18px;
+    font-weight: bold;
+    border: 1px solid plum;
+    background: plum;
+    border-radius: 10px;
+    margin: 10% 40%;
+}
+
+.firstPage{
+    /* visibility: hidden; */
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    background: url("../img/xiao.jpg") no-repeat;
+    background-size: cover;
+    -webkit-background-size: cover;
+    -o-background-size: cover;
+    background-position: center 0;
+    top: 0px;
+    left: 25%;
+    /* z-index: 9999; */
+}
