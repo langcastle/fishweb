@@ -167,10 +167,86 @@
         </ul>
         <p v-else>No todos left!</p>
     </div>
+    <div id="app37">
+        <button v-on:click="counter += 1">add</button>
+        <p>above click button {{counter}} times</p>
+    </div>
+    <div id="app38">
+        <button v-on:click="greet">greet</button>
+    </div>
+    <div id="app39">
+        <button v-on:click="say('hi')">hi</button>
+        <button v-on:click="say('hello')">hello</button>
+        <button v-on:click="warn('Form cannot be submitted yet.', $event)">
+            Submit
+        </button>
+        <button v-on:click.once="dothis">once</button>
+        <div v-on:scroll.passive="onScroll">...</div>
+        <input v-on:keyup.enter="submit">
+        <input v-on:keyup.page-down="onPageDown">
+    </div>
+    <div id="app40">
+        <input v-model="message" placeholder="edit me">
+        <p>Message is: {{ message }}</p>
+
+        <span>Multiline message is:</span>
+        <p style="white-space: pre-line;">{{ message }}</p>
+        <br>
+        <textarea v-model="message" placeholder="add multiple lines"></textarea>
+    </div>
 </body>
 
 </html>
 <script>
+    var app40 = new Vue({
+        el: '#app40',
+        data: {
+            message: "message"
+        }
+    })
+    var app39 = new Vue({
+        el: '#app39',
+        methods: {
+            say: function(mess){
+                alert(mess);
+            },
+            warn: function(message, event){
+                if (event) {
+                    event.preventDefault()
+                }
+                alert(message)
+            },
+            dothis: function(){
+                alert(1)
+            },
+            submit: function(){
+                alert('enter')
+            },
+            onPageDown: function(){
+                alert('onPageDown')
+            }
+        }
+    });
+    var app38 = new Vue({
+        el: '#app38',
+        data: {
+            name: 'vue.js'
+        },
+        methods: {
+            greet: function(event){
+                alert("hello " + this.name);
+                if(event){
+                    alert(event.target.tagName);
+                }
+            }
+        }
+    })
+    var app37 = new Vue({
+        el: '#app37',
+        data: {
+            counter: 0
+        }
+    });
     var app36 = new Vue({
         el: '#app36',
         data: {
