@@ -194,10 +194,98 @@
         <br>
         <textarea v-model="message" placeholder="add multiple lines"></textarea>
     </div>
+    <div id="app41">
+        <input type="checkbox" id="checkbox" v-model="checked">
+        <label for="checkbox">{{ checked }}</label>
+    </div>
+    <div id="app42">
+        <input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+        <label for="jack">Jack</label>
+        <input type="checkbox" id="john" value="John" v-model="checkedNames">
+        <label for="john">John</label>
+        <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+        <label for="mike">Mike</label>
+        <br>
+        <span>Checked names: {{ checkedNames }}</span>
+    </div>
+    <div id="app43">
+        <input type="radio" id="one" value="One" v-model="picked">
+        <label for="one">One</label>
+        <br>
+        <input type="radio" id="two" value="Two" v-model="picked">
+        <label for="two">Two</label>
+        <br>
+        <span>Picked: {{picked}}</span>
+        <br>
+        <select v-model="selected">
+            <option disabled value="">请选择</option>
+            <option>A</option>
+            <option>B</option>
+            <option>C</option>
+        </select>
+        <span>Selected: {{ selected }}</span>
+        <br>
+        <select v-model="mulselected" multiple style="width: 60px;">
+            <option>A</option>
+            <option>C</option>
+            <option>B</option>
+        </select>
+        <br>
+        <label>multiple selected: {{mulselected}}</label>
+        <br>
+        <select v-model="vforSelected">
+            <option v-for="option in options" v-bind:value="option.value">
+                {{option.text}}
+            </option>
+        </select>
+        <br>
+        <input type="radio" v-model="picked" value="a">
+        <label>{{picked}}</label>
+        <input type="checkbox" v-model="toggle" true-value="yes" false-value="no">
+        <input v-model.lazy="msg">
+        <input v-model.number="age" type="number">
+    </div>
 </body>
 
 </html>
 <script>
+    var app43 = new Vue({
+        el: '#app43',
+
+        data: {
+            picked: '',
+            selected: '',
+            mulselected: [],
+            vforSelected: "window",
+            toggle: true,
+            msg: "111",
+            options: [{
+                    text: "Desk",
+                    value: "desk"
+                },
+                {
+                    text: "Window",
+                    value: "window"
+                },
+                {
+                    text: "Door",
+                    value: "door"
+                }
+            ]
+        }
+    })
+    var app42 = new Vue({
+        el: '#app42',
+        data: {
+            checkedNames: []
+        }
+    });
+    var app41 = new Vue({
+        el: '#app41',
+        data: {
+            checked: false
+        }
+    });
     var app40 = new Vue({
         el: '#app40',
         data: {
@@ -207,22 +295,22 @@
     var app39 = new Vue({
         el: '#app39',
         methods: {
-            say: function(mess){
+            say: function (mess) {
                 alert(mess);
             },
-            warn: function(message, event){
+            warn: function (message, event) {
                 if (event) {
                     event.preventDefault()
                 }
                 alert(message)
             },
-            dothis: function(){
+            dothis: function () {
                 alert(1)
             },
-            submit: function(){
+            submit: function () {
                 alert('enter')
             },
-            onPageDown: function(){
+            onPageDown: function () {
                 alert('onPageDown')
             }
         }
@@ -233,9 +321,9 @@
             name: 'vue.js'
         },
         methods: {
-            greet: function(event){
+            greet: function (event) {
                 alert("hello " + this.name);
-                if(event){
+                if (event) {
                     alert(event.target.tagName);
                 }
             }
@@ -251,7 +339,8 @@
         el: '#app36',
         data: {
             todos: [
-                [1,2],[1,3,5]
+                [1, 2],
+                [1, 3, 5]
             ]
         }
     });
