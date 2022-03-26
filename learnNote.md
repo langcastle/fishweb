@@ -388,3 +388,496 @@ Spring 使用 org.springframework.aop.Advisor 接口表示切面的概念，实�
 |引介切面|org.springframework.aop.IntroductionAdvisor|Advisor 的子接口，用来代表引介切面，引介切面是对应引介增强的特殊的切面，它应用于类层面上，所以引介切面适用 ClassFilter 进行定义。|
 
 **一般切面的AOP开发**
+
+## 2.3 基于XML的AspectJ AOP开发  
+我们可以在 Spring 项目中通过 XML 配置，对切面（Aspect 或 Advisor）、切点（PointCut）以及通知（Advice）进行定义和管理，以实现基于 AspectJ 的 AOP 开发。Spring 提供了基于 XML 的 AOP 支持，并提供了一个名为“aop”的命名空间，该命名空间提供了一个 <aop:config> 元素。  
+- 在 Spring 配置中，所有的切面信息（切面、切点、通知）都必须定义在 <aop:config> 元素中；
+- 在 Spring 配置中，可以使用多个 <aop:config>。
+- 每一个 <aop:config> 元素内可以包含 3 个子元素： pointcut、advisor 和 aspect ，***这些子元素必须按照这个顺序进行声明***。
+
+***引入AOP命名空间***  
+在XML配置文件中导入Spring AOP命名空间的约束，如下所示：
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">
+    ...
+</beans>
+```  
+
+***定义切面\<aop:aspect\>***  
+在 Spring 配置文件中，使用 <aop:aspect> 元素定义切面。该元素可以将定义好的 Bean 转换为切面 Bean，所以使用 <aop:aspect> 之前需要先定义一个普通的 Spring Bean。
+```java
+<aop:config>
+    <aop:aspect id="myAspect" ref="aBean">
+        ...
+    </aop:aspect>
+</aop:config>
+```
+
+***定义切入点\<aop:pointcut\>***  
+<aop:pointcut> 用来定义一个切入点，用来表示对哪个类中的那个方法进行增强。它既可以在 <aop:pointcut> 元素中使用，也可以在 <aop:aspect> 元素下使用。
+  - 当 <aop:pointcut>元素作为 <aop:config> 元素的子元素定义时，表示该切入点是全局切入点，它可被多个切面所共享；
+  - 当 <aop:pointcut> 元素作为 <aop:aspect> 元素的子元素时，表示该切入点只对当前切面有效。  
+```java
+<aop:config>
+    <aop:pointcut id="myPointCut"
+        expression="execution(* net.biancheng.service.*.*(..))"/>
+</aop:config>
+```
+其中，id 用于指定切入点的唯一标识名称，execution 用于指定切入点关联的切入点表达式。  
+execution 的语法格式格式为：
+```java
+execution([权限修饰符] [返回值类型] [类的完全限定名] [方法名称]([参数列表]) 
+```
+其中：
+  - 返回值类型、方法名、参数列表是必须配置的选项，而其它参数则为可选配置项。
+  - 返回值类型：*表示可以为任何返回值。如果返回值为对象，则需指定全路径的类名。
+  - 类的完全限定名：指定包名 + 类名。
+  - 方法名：*代表所有方法，set* 代表以 set 开头的所有方法。
+  - 参数列表：(..)代表所有参数；(*)代表只有一个参数，参数类型为任意类型；(*,String)代表有两个参数，第一个参数可以为任何值，第二个为 String 类型的值。  
+
+举例 1：对 net.biancheng.c 包下 UserDao 类中的 add() 方法进行增强，配置如下。
+```java
+execution(* net.biancheng.c.UserDao.add(..))
+```
+举例 2：对 net.biancheng.c 包下 UserDao 类中的所有方法进行增强，配置如下。
+```java
+execution(* net.biancheng.c.UserDao.*(..))
+```
+举例 3：对 net.biancheng.c 包下所有类中的所有方法进行增强，配置如下。
+```java
+execution(* net.biancheng.c.*.*(..))
+```
+
+***定义通知***  
+AspectJ 支持 5 种类型的 advice，如下。
+```java
+<aop:aspect id="myAspect" ref="aBean">
+    <!-- 前置通知 -->
+    <aop:before pointcut-ref="myPointCut" method="..."/>
+    <!-- 后置通知 -->
+    <aop:after-returning pointcut-ref="myPointCut" method="..."/>
+    <!-- 环绕通知 -->
+    <aop:around pointcut-ref="myPointCut" method="..."/>
+    <!-- 异常通知 -->
+    <aop:after-throwing pointcut-ref="myPointCut" method="..."/>
+    <!-- 最终通知 -->
+    <aop:after pointcut-ref="myPointCut" method="..."/>
+    .... 
+</aop:aspect>
+```
+
+## 2.4 基于注解的AspectJ AOP开发  
+为了简化XML配置文件，便于维护。AspectJ框架为AOP开发提供了一套\@AspectJ注解。它允许我们直接在Java类中通过注解的方式对切面（Aspect）、切入点（Pointcut）和增强（Advice）进行定义，Spring框架可以根据这些注解生成AOP代理。注解介绍如下表：
+|名称|说明|
+|:---|:---|
+|\@Aspect|用于定义一个切面|
+|\@Pointcut|用于定义一个切入点|
+|\@Before|用于定义前置通知，相当于BeforeAdvice|
+|\@AfterReturning|用于定义后置通知，相当于AfterReturningAdvice|
+|\@Around|用于定义环绕通知，相当于MethodInterceptor|
+|\@AfterThrowing|用于定义抛出通知，相当于ThrowAdvice|
+|\@After|用于定义最终通知，不管是否异常，该通知都会执行|
+|\@DeclareParents|用于定义引介通知，相当于IntroductionInterceptor(不要求掌握)|
+
+- ***启用\@AspectJ注解支持***  
+在使用 @AspectJ 注解进行 AOP 开发前，首先我们要先启用 @AspectJ 注解支持。我们可以通过以下 2 种方式来启用 @AspectJ 注解。
+   - 使用Java配置类启用  
+   我们可以在Java配置类（标注了 @Configuration 注解的类）中，使用 @EnableAspectJAutoProxy 和 @ComponentScan 注解启用 @AspectJ 注解支持。
+   ```java
+   @Configuration
+   @ComponentScan(basePackages = "net.biancheng.c") //注解扫描
+   @EnableAspectJAutoProxy //开启 AspectJ 的自动代理
+   public class AppConfig {
+   }
+   ```
+   - 基于XML配置启用  
+   在 Spring 的 XML 配置文件中，添加以下内容启用 @AspectJ 注解支持。
+   ```java
+   <!-- 开启注解扫描 -->
+   <context:component-scan base-package="net.biancheng.c"></context:component-scan>
+   <!--开启AspectJ 自动代理-->
+   <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+   ```
+
+- ***定义切面 @Aspect***  
+  我们可以通过 @Aspect 注解将一个 Bean 定义为切面。在启用了 @AspectJ 注解支持的情况下，Spring 会自动将 IoC 容器（ApplicationContext）中的所有使用了 @Aspect 注解的 Bean 识别为一个切面。
+
+  我们可以在 XML 配置中通过一些配置将这个类定义为一个 Bean，如下。
+  ```java
+  <bean id = "myAspect" class = "net.biancheng.c.MyAspect">
+   ...
+  </bean>
+  ```
+  在定义完 Bean 后，我们只需要在Bean 对应的 Java 类中使用一个 @Aspect 注解，将这个 Bean 定义为一个切面，代码如下。
+  ```java
+  package net.biancheng.c;
+  import org.aspectj.lang.annotation.*;
+  @Aspect //定义为切面
+  public class MyAspect {
+  }
+  ```
+  全注解方式定义切面，我们也可以在 Java 类上使用以下 2 个注解，使用全注解方式定义切面。
+  ```java
+  package net.biancheng.c;
+  import org.aspectj.lang.annotation.*;
+  import org.springframework.stereotype.Component;
+  @Component // 定义成 Bean
+  @Aspect //定义为切面
+  public class MyAspect {
+  }
+  ```
+  在以上代码中共使用两个注解：  
+  - @Component 注解：将这个类的对象定义为一个 Bean；
+  - @Aspect 注解：则是将这个 Bean 定义为一个切面。
+
+- ***定义切点 @Pointcut***  
+  在 AspectJ 中，我们可以使用 @Pointcut 注解用来定义一个切点。需要注意的是，定义为切点的方法，它的返回值类型必须为 void，示例代码如下。
+  ```java
+  // 要求：方法必须是private，返回值类型为 void，名称自定义，没有参数
+  @Pointcut("execution(*net.biancheng..*.*(..))")
+  private void myPointCut() {
+  }
+  ```
+  @Pointcut 注解中有一个 value 属性，这个属性的值就是切入点表达式。有关切入点表达式的具体介绍请参考《使用AspectJ实现AOP（基于XML）》中的 execution 语法格式介绍。  
+  值得注意的是，我除了可以通过切入点表达式（execution）直接对切点进行定义外，还可以通过切入点方法的名称来引用其他的切入点。在使用方法名引用其他切入点时，还可以使用“&&”、“||”和“!”等表示“与”、“或”、“非”的含义，示例代码如下。
+  ```java
+  /**
+  * 将 net.biancheng.c.dao包下 UserDao 类中的 get() 方法定义为一个切点
+  */
+  @Pointcut(value ="execution(* net.biancheng.c.dao.UserDao.get(..))")
+  public void pointCut1(){
+  }
+  /**
+  * 将 net.biancheng.c.dao包下 UserDao 类中的 delete() 方法定义为一个切点
+  */
+  @Pointcut(value ="execution(* net.biancheng.c.dao.UserDao.delete(..))")
+  public void pointCut2(){
+  }
+  /**
+  * 除了 net.biancheng.c.dao包下 UserDao 类中 get() 方法和 delete() 方法外，其他方法都定义为切点
+  *
+  * ！ 表示 非 ，即 "不是" 的含义，求补集
+  * * && 表示 与，即 ”并且“ ，求交集
+  * || 表示 或，即 “或者”，求并集
+  */
+  @Pointcut(value ="!pointCut1() && !pointCut2()")
+  public void pointCut3(){
+  }
+  ```
+
+- ***定义通知***  
+  AspectJ 为我们提供了以下 6 个注解，来定义 6 种不同类型的通知（Advice），如下表。
+  |注解|说明|
+  |:---|:---|
+  |@Before|用于定义前置通知，相当于 BeforeAdvice。|
+  |@AfterReturning|用于定义后置通知，相当于 AfterReturningAdvice。|
+  |@Around|用于定义环绕通知，相当于 MethodInterceptor。|
+  |@AfterThrowing|用于定义抛出通知，相当于 ThrowAdvice。|
+  |@After|用于定义最终通知，不管是否异常，该通知都会执行。|
+  |@DeclareParents|用于定义引介通知，相当于 IntroductionInterceptor（不要求掌握）。|
+
+  以上这些通知注解中都有一个 value 属性，这个 value 属性的取值就是这些通知（Advice）作用的切点（PointCut），它既可以是切入点表达式，也可以是切入点的引用（切入点对应的方法名称），示例代码如下。
+  ```java
+  @Pointcut(value ="execution(* net.biancheng.c.dao.UserDao.get(..))")
+  public void pointCut1(){
+  }
+  @Pointcut(value ="execution(* net.biancheng.c.dao.UserDao.delete(..))")
+  public void pointCut2(){
+  }
+  @Pointcut(value ="!pointCut1() && !pointCut2()")
+  public void pointCut3(){
+  }
+  //使用切入点引用
+  @Before("MyAspect.pointCut3()")
+  public void around() throws Throwable {
+      System.out.println("环绕增强……");
+  }
+  //使用切入点表达式
+  @AfterReturning(value = "execution(* net.biancheng.c.dao.UserDao.get(..))" ,returning = "returnValue")
+  public void afterReturning(Object returnValue){
+      System.out.println("方法返回值为："+returnValue);
+  }
+  ```
+
+## 2.5 JdbcTemplate数据库操作  
+JdbcTemplate 是 Spring JDBC 核心包（core）中的核心类，它可以通过配置文件、注解、Java 配置类等形式获取数据库的相关信息，实现了对 JDBC 开发过程中的驱动加载、连接的开启和关闭、SQL 语句的创建与执行、异常处理、事务处理、数据类型转换等操作的封装。我们只要对其传入SQL 语句和必要的参数即可轻松进行 JDBC 编程。
+
+JdbcTemplate 的全限定命名为 org.springframework.jdbc.core.JdbcTemplate，它提供了大量的查询和更新数据库的方法，如下表所示。 
+<table border=1>
+    <tr>
+        <th>方法</th>
+        <th>说明</th>
+    </tr>
+    <tr>
+        <td>public int update(String sql)</td>
+        <td rowspan="2">
+            用于执行新增、更新、删除等语句；  
+            <li>sql：需要执行的 SQL 语句；</li>
+            <li>args 表示需要传入到 SQL 语句中的参数。</li>
+        </td>
+    </tr>
+    <tr>
+        <td>public int update(String sql,Object... args)</td>
+    </tr>
+    <tr>
+        <td>public void execute(String sql)</td>
+        <td rowspan="2">
+            可以执行任意 SQL，一般用于执行 DDL 语句；
+            <li>sql：需要执行的 SQL 语句；</li>
+            <li>action 表示执行完 SQL 语句后，要调用的函数。</li>
+        </td>
+    </tr>
+    <tr>
+        <td>public T execute(String sql, PreparedStatementCallback action)</td>
+    </tr>
+    <tr>
+        <td>public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) </td>
+        <td rowspan="2">
+            用于执行查询语句；
+            <li>sql：需要执行的 SQL 语句；</li>
+            <li>rowMapper：用于确定返回的集合（List）的类型；</li>
+            <li>args：表示需要传入到 SQL 语句的参数。</li>
+        </td>
+    </tr>
+    <tr>
+        <td>public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args)</td>
+    </tr>
+    <tr>
+        <td>public int[] batchUpdate(String sql, List<Object[]> batchArgs, final int[] argTypes) </td>
+        <td rowspan="2">
+            用于批量执行新增、更新、删除等语句；
+            <li>sql：需要执行的 SQL 语句；</li>
+            <li>argTypes：需要注入的 SQL 参数的 JDBC 类型；</li>
+            <li>batchArgs：表示需要传入到 SQL 语句的参数。</li>
+        </td>
+    </tr>
+</table>
+
+## 2.6 Spring事务  
+*事务*（Transaction）是基于关系型数据库（RDBMS）的企业应用的重要组成部分。在软件开发领域，事务扮演者十分重要的角色，用来确保应用程序数据的完整性和一致性。
+
+事务具有 4 个特性：原子性、一致性、隔离性和持久性，简称为 ACID 特性。  
+- *原子性（Atomicity）*：一个事务是一个不可分割的工作单位，事务中包括的动作要么都做要么都不做。
+- *一致性（Consistency）*：事务必须保证数据库从一个一致性状态变到另一个一致性状态，一致性和原子性是密切相关的。
+- *隔离性（Isolation）*：一个事务的执行不能被其它事务干扰，即一个事务内部的操作及使用的数据对并发的其它事务是隔离的，并发执行的各个事务之间不能互相打扰。
+- *持久性（Durability）*：持久性也称为永久性，指一个事务一旦提交，它对数据库中数据的改变就是永久性的，后面的其它操作和故障都不应该对其有任何影响。
+
+事务允许我们将几个或一组操作组合成一个要么全部成功、要么全部失败的工作单元。如果事务中的所有的操作都执行成功，那自然万事大吉。但如果事务中的任何一个操作失败，那么事务中所有的操作都会被回滚，已经执行成功操作也会被完全清除干净，就好像什么事都没有发生一样。
+
+**事务管理方式**  
+Spring 支持以下 2 种事务管理方式。
+<table>
+    <tr>
+        <th>事务管理方式</th>
+        <th>说明</th>
+    </tr>
+    <tr>
+        <td>编程式事务管理</td>
+        <td>编程式事务管理是通过编写代码实现的事务管理。<br>这种方式能够在代码中精确地定义事务的边界，我们可以根据需求规定事务从哪里开始，到哪里结束。</td>
+    </tr>
+    <tr>
+        <td>声明式事务管理</td>
+        <td>Spring 声明式事务管理在底层采用了 AOP 技术，其最大的优点在于无须通过编程的方式管理事务，只需要在配置文件中进行相关的规则声明，就可以将事务规则应用到业务逻辑中。</td>
+    </tr>
+</table>
+
+选择编程式事务还是声明式事务，很大程度上就是在控制权细粒度和易用性之间进行权衡。  
+- 编程式对事物控制的细粒度更高，我们能够精确的控制事务的边界，事务的开始和结束完全取决于我们的需求，但这种方式存在一个致命的缺点，那就是事务规则与业务代码耦合度高，难以维护，因此我们很少使用这种方式对事务进行管理。  
+- 声明式事务易用性更高，对业务代码没有侵入性，耦合度低，易于维护，因此这种方式也是我们最常用的事务管理方式。  
+
+**事务管理器**  
+Spring 并不会直接管理事务，而是通过事务管理器对事务进行管理的。
+
+在 Spring 中提供了一个 org.springframework.transaction.PlatformTransactionManager 接口，这个接口被称为 Spring 的事务管理器，其源码如下。
+```java
+public interface PlatformTransactionManager extends TransactionManager {
+    TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException;
+    void commit(TransactionStatus status) throws TransactionException;
+    void rollback(TransactionStatus status) throws TransactionException;
+}
+```
+该接口中各方法说明如下：
+|名称|说明|
+|:---|:---|
+|TransactionStatus getTransaction(TransactionDefinition definition)|用于获取事务的状态信息|
+|void commit(TransactionStatus status)|用于提交事务|
+|void rollback(TransactionStatus status)|用于回滚事务|
+
+Spring 为不同的持久化框架或平台（例如 JDBC、Hibernate、JPA 以及 JTA 等）提供了不同的 PlatformTransactionManager 接口实现，这些实现类被称为事务管理器实现。
+|实现类|说明|
+|:---|:---|
+|org.springframework.jdbc.datasource.DataSourceTransactionManager|使用 Spring JDBC 或 iBatis 进行持久化数据时使用。|
+|org.springframework.orm.hibernate3.HibernateTransactionManager|使用 Hibernate 3.0 及以上版本进行持久化数据时使用。|
+|org.springframework.orm.jpa.JpaTransactionManager|使用 JPA 进行持久化时使用。
+|org.springframework.jdo.JdoTransactionManager|当持久化机制是 Jdo 时使用。
+|org.springframework.transaction.jta.JtaTransactionManager|使用 JTA 来实现事务管理，在一个事务跨越多个不同的资源（即分布式事务）使用该实现。|
+
+这些事务管理器的使用方式十分简单，我们只要根据持久化框架（或平台）选用相应的事务管理器实现，即可实现对事物的管理，而不必关心实际事务实现到底是什么。
+
+**TransactionDefinition 接口**  
+Spring 将 XML 配置中的事务信息封装到对象 TransactionDefinition 中，然后通过事务管理器的 getTransaction() 方法获得事务的状态（TransactionStatus），并对事务进行下一步的操作。
+
+TransactionDefinition 接口提供了获取事务相关信息的方法，接口方法如下。
+|名称|说明|
+|:---|:---|
+|String getName()|获取事务的名称|
+|int getIsolationLevel()|获取事务的隔离级别|
+|int getPropagationBehavior()|获取事务的传播行为|
+|int getTimeout()|获取事务的超时时间|
+|boolean isReadOnly()|获取事务是否只读|
+
+  *事务的隔离级别*   
+  事务的隔离级别定义了一个事务可能受其他并发事务影响的程度。  
+  Spring 中提供了以下隔离级别，我们可以根据自身的需求自行选择合适的隔离级别。
+  |方法|说明|
+  |:---|:---|
+  |ISOLATION_DEFAULT|使用后端数据库默认的隔离级别|
+  |ISOLATION_READ_UNCOMMITTED|允许读取尚未提交的更改，可能导致脏读、幻读和不可重复读|
+  |ISOLATION_READ_COMMITTED|Oracle 默认级别，允许读取已提交的并发事务，防止脏读，可能出现幻读和不可重复读|
+  |ISOLATION_REPEATABLE_READ|MySQL 默认级别，多次读取相同字段的结果是一致的，防止脏读和不可重复读，可能出现幻读|
+  |ISOLATION_SERIALIZABLE|完全服从 ACID 的隔离级别，防止脏读、不可重复读和幻读|
+
+  *事务的传播行为*  
+  事务传播行为（propagation behavior）指的是，当一个事务方法被另一个事务方法调用时，这个事务方法应该如何运行。例如，事务方法 A 在调用事务方法 B 时，B 方法是继续在调用者 A 方法的事务中运行呢，还是为自己开启一个新事务运行，这就是由事务方法 B 的事务传播行为决定的。  
+  *事务方法指的是能让数据库表数据发生改变的方法，例如新增数据、删除数据、修改数据的方法。*  
+  Spring 提供了以下 7 种不同的事务传播行为。
+  |名称|说明|
+  |:---|:---|
+  |PROPAGATION_MANDATORY|支持当前事务，如果不存在当前事务，则引发异常。|
+  |PROPAGATION_NESTED|如果当前事务存在，则在嵌套事务中执行。|
+  |PROPAGATION_NEVER|不支持当前事务，如果当前事务存在，则引发异常。|
+  |PROPAGATION_NOT_SUPPORTED|不支持当前事务，始终以非事务方式执行。|
+  |PROPAGATION_REQUIRED|默认传播行为，如果存在当前事务，则当前方法就在当前事务中运行，如果不存在，则创建一个新的事务，并在这个新建的事务中运行。|
+  |PROPAGATION_REQUIRES_NEW|创建新事务，如果已经存在事务则暂停当前事务。|
+  |PROPAGATION_SUPPORTS|支持当前事务，如果不存在事务，则以非事务方式执行。|
+
+**TransactionStatus 接口**  
+TransactionStatus 接口提供了一些简单的方法，来控制事务的执行、查询事务的状态，接口定义如下。
+```java
+public interface TransactionStatus extends SavepointManager {
+    boolean isNewTransaction();
+    boolean hasSavepoint();
+    void setRollbackOnly();
+    boolean isRollbackOnly();
+    boolean isCompleted();
+}
+```
+该接口中各方法说明如下。
+|名称|说明|
+|:---|:---|
+|boolean hasSavepoint()|获取是否存在保存点|
+|boolean isCompleted()|获取事务是否完成|
+|boolean isNewTransaction()|获取是否是新事务|
+|boolean isRollbackOnly()|获取事务是否回滚|
+|void setRollbackOnly()|设置事务回滚|
+
+## 2.7 Spring整合日志框架Log4j2  
+Log4j 是 Apache 提供的一款开源的强有力的 Java 日志记录工具。它可以通过配置文件灵活、细致地控制日志的生成过程，例如日志级别、日志的输出类型、日志的输出方式以及输出格式等。
+
+- 下载Log4j2的压缩包
+```
+apache-log4j-2.xx.x-bin.zip：为 Log4j2 为 Windows 系统提供的的压缩包。
+apache-log4j-2.xx.x-bin.tar.gz：为 Log4j2 为 linux、MacOsX 系统提供的压缩包。
+```
+
+- 解压导入jar到项目中
+主要包含jar包：  
+```
+log4j-api-2.17.1.jar
+log4j-core-2.17.1.jar
+log4j-slf4j18-impl-2.17.1.jar
+```
+
+- 导入slf4j-api-xxx.jar  
+此外，我们还需要向 my-spring-log4j-demo 项目中导入一个 slf4j-api-xxx.jar ，但该依赖包的版本是有限制的。我们下载的 Log4j2 的依赖包中有一个 log4j-slf4j18-impl-2.17.1.jar，它是 Log4j2 提供的绑定到 SLF4J 的配置器。   
+    Log4j2 提供了以下 2 个适配器：
+    - log4j-slf4j-impl 应该与 SLF4J 1.7.x 版本或更早版本一起使用。
+    - log4j-slf4j18-impl 应该与 SLF4J 1.8.x 版本或更高版本一起使用。
+
+  因此，我们向项目中引入的 slf4j-api-xxx.jar  必须为 1.8.x 及以上版本。这里我们以 slf4j-api-1.8.0-beta4.jar 为例，该 Jar 包我们可以使用浏览器访问的 slf4j-api 的 [Maven 仓库](https://repo1.maven.org/maven2/org/slf4j/slf4j-api/1.8.0-beta4/)进行下载
+
+- 在 src 目录下，创建一个名为 log4j2.xml 的配置文件，配置内容如下。
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!-- Configuration 后面的 status 用于设置 log4j2 自身内部的信息输出，可以不设置，当设置成 trace 时，可以看到 log4j2 内部各种详细输出-->
+<configuration status="INFO">
+    <!--先定义所有的 appender-->
+    <appenders>
+        <!--输出日志信息到控制台-->
+        <console name="Console" target="SYSTEM_OUT">
+            <!--控制日志输出的格式-->
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </console>
+    </appenders>
+    <!--然后定义 logger，只有定义了 logger 并引入的 appender，appender 才会生效-->
+    <!--root：用于指定项目的根日志，如果没有单独指定 Logger，则会使用 root 作为默认的日志输出-->
+    <loggers>
+        <root level="info">
+            <appender-ref ref="Console"/>
+        </root>
+    </loggers>
+</configuration>
+```
+
+- 在 net.rantan.www 包下，创建一个名为 Log4JTest 的 Java 类，代码如下。
+```java
+package net.rentan.www;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Log4JTest {
+	private static final Logger log = LoggerFactory.getLogger(Log4JTest.class);
+    private String message;
+    public void setMessage(String message) {
+        this.message = message;
+    }
+    public void getMessage() {
+        log.info("消息为：" + message);
+    }
+}
+```
+
+- 在 src 目录下创建一个 Beans.xml，配置内容如下。
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+    
+    <bean id="log4jTest" class="net.rentan.www.Log4JTest">
+        <property name="message" value="Hello,Spring!"/>
+    </bean>
+</beans>
+```
+
+- 在 net.rantan.www 包下，创建一个 MainApp 的类，代码如下。
+```java
+package net.rentan.www;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class MainApp {
+	private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+	public static void main(String[] args) {
+		ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+        log.info("正在从容器中获取 HelloLog4j 的 Bean");
+        Log4JTest obj = context.getBean("log4jTest", Log4JTest.class);
+        obj.getMessage();
+        log.info("代码执行完成！");
+	}
+}
+
+```
