@@ -1,6 +1,5 @@
-# Spring Boot Learn
+# SpringBoot配置绑定 
 
-## 1、SpringBoot配置绑定  
 配置绑定就是把配置文件中的值与JavaBean中对应的属性进行绑定。SpringBoot提供了2种方式进行配置绑定：
 - 使用 @ConfigurationProperties 注解
 - 使用 @Value 注解
